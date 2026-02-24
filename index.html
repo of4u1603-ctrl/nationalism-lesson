@@ -69,10 +69,18 @@
         .assistant-input { flex-grow: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; outline: none; font-family: inherit; }
         .assistant-send { background: #667eea; color: white; border: none; border-radius: 50%; width: 35px; height: 35px; margin-right: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .assistant-send:hover { background: #764ba2; transform: scale(1.1); }
+        .assistant-send:disabled { background: #ccc; cursor: not-allowed; }
 
         /* Toast Message */
         #toast { position: fixed; bottom: 30px; right: 30px; background: #333; color: white; padding: 15px 25px; border-radius: 10px; display: none; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
+
+        /* Loader */
+        .typing { display: inline-flex; align-items: center; gap: 3px; }
+        .dot { width: 4px; height: 4px; background: #667eea; border-radius: 50%; animation: blink 1.4s infinite both; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
 
         @media (max-width: 600px) {
             header h1 { font-size: 1.8em; }
@@ -177,7 +185,7 @@
     </div>
     <div class="assistant-input-area">
         <input type="text" id="chatInput" class="assistant-input" placeholder="שאלו שאלה...">
-        <button class="assistant-send" onclick="sendToAI()">➔</button>
+        <button class="assistant-send" id="sendBtn" onclick="sendToAI()">➔</button>
     </div>
 </div>
 
@@ -185,25 +193,26 @@
 <div id="toast"></div>
 
 <script>
-    const apiKey = ""; // API Key handled by environment
-    let userSessionData = {};
+    const apiKey = ""; // API Key injection point
     let selections = Array(12).fill(null);
 
     // Initial setup
     window.onload = () => {
         const saved = localStorage.getItem('nationalism_session_data');
         if (saved) {
-            userSessionData = JSON.parse(saved);
+            const data = JSON.parse(saved);
             ['strongest_component', 'american_type', 'napoleon_paradox'].forEach(id => {
-                if (userSessionData[id]) document.getElementById('ans_' + id).value = userSessionData[id];
+                if (data[id]) document.getElementById('ans_' + id).value = data[id];
             });
         }
         buildQuiz();
     };
 
-    // Generic Gemini API caller with backoff
-    async function callGemini(message, systemPrompt = "אתה מורה להיסטוריה מעודד. ענה בעברית פשוטה וקצרה מאוד (עד 2-3 שורות).") {
+    // Robust Gemini API caller with backoff
+    async function callGemini(message) {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const systemPrompt = "אתה מורה להיסטוריה מעודד. ענה בעברית פשוטה וקצרה מאוד (עד 2-3 שורות). התמקד בנושאי לאומיות, המהפכה האמריקאית ונפוליאון.";
+        
         const payload = {
             contents: [{ parts: [{ text: message }] }],
             systemInstruction: { parts: [{ text: systemPrompt }] }
@@ -218,41 +227,63 @@
                     body: JSON.stringify(payload)
                 });
                 if (response.ok) {
-                    const data = await response.json();
-                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "לא הצלחתי למצוא תשובה.";
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "מצטער, לא הצלחתי למצוא תשובה.";
                 }
             } catch (e) {}
             await new Promise(r => setTimeout(r, delay));
             delay *= 2;
         }
-        return "תקלה בחיבור לשרת ה-AI. נסו שוב מאוחר יותר.";
+        return "שגיאה בחיבור ל-Gemini. אנא וודאו שאתם מחוברים לאינטרנט ונסו שוב.";
     }
 
     // Assistant logic
     async function sendToAI() {
         const inputEl = document.getElementById('chatInput');
         const contentEl = document.getElementById('chatContent');
+        const sendBtn = document.getElementById('sendBtn');
         const query = inputEl.value.trim();
+        
         if (!query) return;
 
-        contentEl.innerHTML += `<div style="margin-top:10px; color:#667eea; font-weight:bold;">אתה: ${query}</div>`;
+        // User Message
+        contentEl.innerHTML += `<div style="margin-top:10px; color:#667eea; font-weight:bold; text-align: left;">אתה: ${query}</div>`;
         inputEl.value = "";
+        
+        // Typing Indicator
+        const loaderId = "loader_" + Date.now();
+        contentEl.innerHTML += `<div id="${loaderId}" style="margin-top:8px;"><strong>Gemini:</strong> <span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>`;
         contentEl.scrollTop = contentEl.scrollHeight;
+        
+        sendBtn.disabled = true;
 
+        // Call API
         const response = await callGemini(query);
+        
+        // Remove Loader and Add Response
+        const loader = document.getElementById(loaderId);
+        if (loader) loader.remove();
+        
         contentEl.innerHTML += `<div style="margin-top:8px; border-top:1px solid #eee; padding-top:5px;"><strong>Gemini:</strong> ${response}</div>`;
         contentEl.scrollTop = contentEl.scrollHeight;
+        sendBtn.disabled = false;
     }
+
+    // Allow Enter key to send message
+    document.getElementById('chatInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendToAI();
+    });
 
     function resetChat() {
         document.getElementById('chatContent').innerHTML = "שלום! אני כאן לעזור. שאלו אותי כל דבר על לאומיות!";
     }
 
-    // Data Management
+    // Save Data
     function saveData(id) {
         const text = document.getElementById('ans_' + id).value;
-        userSessionData[id] = text;
-        localStorage.setItem('nationalism_session_data', JSON.stringify(userSessionData));
+        const currentData = JSON.parse(localStorage.getItem('nationalism_session_data') || '{}');
+        currentData[id] = text;
+        localStorage.setItem('nationalism_session_data', JSON.stringify(currentData));
         
         const ok = document.getElementById('ok_' + id);
         ok.style.display = 'block';
@@ -261,78 +292,18 @@
 
     // Quiz construction
     const quizItems = [
-        { 
-            reminder: "זכרו: לאום הוא קבוצה שרוצה מדינה, בעוד עם יכול להיות רק קבוצה תרבותית.",
-            q: "מהו ההבדל המרכזי בין 'עם' ל'לאום'?", 
-            opts: ["א. עם הוא רק קבוצה דתית.", "ב. לאום הוא עם שיש לו שאיפה פוליטית למדינה.", "ג. אין שום הבדל ביניהם."], 
-            ans: 1 
-        },
-        { 
-            reminder: "חשבו על משהו שמאפשר לאנשים לדבר ולהבין זה את זה.",
-            q: "איזה מרכיב נחשב ל'גשר' שמקשר בין בני האדם בלאומיות?", 
-            opts: ["א. שפה משותפת", "ב. מספר זהות דומה", "ג. סוג לבוש זהה"], 
-            ans: 0 
-        },
-        { 
-            reminder: "לאומיות זו מבוססת על דברים שלא בוחרים, כמו משפחה ועבר.",
-            q: "לאומיות אתנית מבוססת בעיקר על:", 
-            opts: ["א. הצבעה בבחירות", "ב. הסכמה על חוקים", "ג. מוצא, דם והיסטוריה"], 
-            ans: 2 
-        },
-        { 
-            reminder: "בסוג הזה, האזרחות והחוק הם מה שקובע מי שייך.",
-            q: "מהי לאומיות אזרחית?", 
-            opts: ["א. רק מי שנולד בארץ שייך.", "ב. מבוססת על ערכים, חוקים ואזרחות.", "ג. קיימת רק בערים גדולות."], 
-            ans: 1 
-        },
-        { 
-            reminder: "אמריקה הוקמה על ידי מהגרים שהתאחדו סביב רעיונות החירות.",
-            q: "המהפכה האמריקאית נחשבת ללאומיות:", 
-            opts: ["א. אזרחית", "ב. אתנית", "ג. דתית"], 
-            ans: 0 
-        },
-        { 
-            reminder: "המתיישבים כעסו שהם משלמים מיסים לבריטניה בלי לקבל זכות השפעה.",
-            q: "מה הייתה הסיסמה המרכזית במהפכה האמריקאית?", 
-            opts: ["א. חירות או מוות", "ב. אין מיסוי ללא ייצוג", "ג. העם רוצה שינוי"], 
-            ans: 1 
-        },
-        { 
-            reminder: "נפוליאון כבש את רוב אירופה והביא איתו חוקים חדשים.",
-            q: "כיצד נפוליאון הפיץ את הלאומיות?", 
-            opts: ["א. הוא חילק דגלים.", "ב. הוא בנה מפעלים.", "ג. הוא כבש שטחים והפיץ את ערכי השוויון והחוק."], 
-            ans: 2 
-        },
-        { 
-            reminder: "נפוליאון הביא חופש לאחרים אבל גם שלט עליהם בכוח.",
-            q: "מה הכוונה ב'פרדוקס נפוליאון'?", 
-            opts: ["א. הוא הביא חופש אבל שלט בכוח, לכן מרדו בו בשם הלאומיות.", "ב. הוא היה גנרל אבל שנא צבא.", "ג. הוא היה צרפתי שחי ברוסיה."], 
-            ans: 0 
-        },
-        { 
-            reminder: "אלו דברים שאדם נולד לתוכם ואינו יכול לשנות.",
-            q: "איזה מהבאים הוא מרכיב 'שיוכי'?", 
-            opts: ["א. דעה פוליטית", "ב. מוצא אתני (דם)", "ג. תחביב אישי"], 
-            ans: 1 
-        },
-        { 
-            reminder: "שינויים אלו אפשרו לאנשים להרגיש חלק מקבוצה גדולה יותר.",
-            q: "מדוע הלאומיות צמחה במאה ה-18 וה-19?", 
-            opts: ["א. בגלל המהפכות הגדולות ושינויים חברתיים.", "ב. כי גילו את החשמל.", "ג. כי כולם עברו לגור בכפר."], 
-            ans: 0 
-        },
-        { 
-            reminder: "ישראל היא מדינה שמשלבת מוצא יהודי עם חוקים דמוקרטיים.",
-            q: "ישראל נחשבת למדינת לאום:", 
-            opts: ["א. אזרחית בלבד", "ב. ללא סוג מוגדר", "ג. אתנית-תרבותית (עם מאפיינים אזרחיים)"], 
-            ans: 2 
-        },
-        { 
-            reminder: "זהו הרעיון המרכזי בדמוקרטיה - למי שייך הכוח האמיתי?",
-            q: "מהי 'ריבונות העם'?", 
-            opts: ["א. שהמלך מחליט הכל.", "ב. שהסמכות והכוח לשלוט נמצאים בידי האזרחים.", "ג. שרק הצבא שולט."], 
-            ans: 1 
-        }
+        { reminder: "זכרו: לאום הוא קבוצה שרוצה מדינה, בעוד עם יכול להיות רק קבוצה תרבותית.", q: "מהו ההבדל המרכזי בין 'עם' ל'לאום'?", opts: ["א. עם הוא רק קבוצה דתית.", "ב. לאום הוא עם שיש לו שאיפה פוליטית למדינה.", "ג. אין שום הבדל ביניהם."], ans: 1 },
+        { reminder: "חשבו על משהו שמאפשר לאנשים לדבר ולהבין זה את זה.", q: "איזה מרכיב נחשב ל'גשר' שמקשר בין בני האדם בלאומיות?", opts: ["א. שפה משותפת", "ב. מספר זהות דומה", "ג. סוג לבוש זהה"], ans: 0 },
+        { reminder: "לאומיות זו מבוססת על דברים שלא בוחרים, כמו משפחה ועבר.", q: "לאומיות אתנית מבוססת בעיקר על:", opts: ["א. הצבעה בבחירות", "ב. הסכמה על חוקים", "ג. מוצא, דם והיסטוריה"], ans: 2 },
+        { reminder: "בסוג הזה, האזרחות והחוק הם מה שקובע מי שייך.", q: "מהי לאומיות אזרחית?", opts: ["א. רק מי שנולד בארץ שייך.", "ב. מבוססת על ערכים, חוקים ואזרחות.", "ג. קיימת רק בערים גדולות."], ans: 1 },
+        { reminder: "אמריקה הוקמה על ידי מהגרים שהתאחדו סביב רעיונות החירות.", q: "המהפכה האמריקאית נחשבת ללאומיות:", opts: ["א. אזרחית", "ב. אתנית", "ג. דתית"], ans: 0 },
+        { reminder: "המתיישבים כעסו שהם משלמים מיסים לבריטניה בלי לקבל זכות השפעה.", q: "מה הייתה הסיסמה המרכזית במהפכה האמריקאית?", opts: ["א. חירות או מוות", "ב. אין מיסוי ללא ייצוג", "ג. העם רוצה שינוי"], ans: 1 },
+        { reminder: "נפוליאון כבש את רוב אירופה והביא איתו חוקים חדשים.", q: "כיצד נפוליאון הפיץ את הלאומיות?", opts: ["א. הוא חילק דגלים.", "ב. הוא בנה מפעלים.", "ג. הוא כבש שטחים והפיץ את ערכי השוויון והחוק."], ans: 2 },
+        { reminder: "נפוליאון הביא חופש לאחרים אבל גם שלט עליהם בכוח.", q: "מה הכוונה ב'פרדוקס נפוליאון'?", opts: ["א. הוא הביא חופש אבל שלט בכוח, לכן מרדו בו בשם הלאומיות.", "ב. הוא היה גנרל אבל שנא צבא.", "ג. הוא היה צרפתי שחי ברוסיה."], ans: 0 },
+        { reminder: "אלו דברים שאדם נולד לתוכם ואינו יכול לשנות.", q: "איזה מהבאים הוא מרכיב 'שיוכי'?", opts: ["א. דעה פוליטית", "ב. מוצא אתני (דם)", "ג. תחביב אישי"], ans: 1 },
+        { reminder: "שינויים אלו אפשרו לאנשים להרגיש חלק מקבוצה גדולה יותר.", q: "מדוע הלאומיות צמחה במאה ה-18 וה-19?", opts: ["א. בגלל המהפכות הגדולות ושינויים חברתיים.", "ב. כי גילו את החשמל.", "ג. כי כולם עברו לגור בכפר."], ans: 0 },
+        { reminder: "ישראל היא מדינה שמשלבת מוצא יהודי עם חוקים דמוקרטיים.", q: "ישראל נחשבת למדינת לאום:", opts: ["א. אזרחית בלבד", "ב. ללא סוג מוגדר", "ג. אתנית-תרבותית (עם מאפיינים אזרחיים)"], ans: 2 },
+        { reminder: "זהו הרעיון המרכזי בדמוקרטיה - למי שייך הכוח האמיתי?", q: "מהי 'ריבונות העם'?", opts: ["א. שהמלך מחליט הכל.", "ב. שהסמכות והכוח לשלוט נמצאים בידי האזרחים.", "ג. שרק הצבא שולט."], ans: 1 }
     ];
 
     function buildQuiz() {
@@ -365,15 +336,12 @@
             const correct = parseInt(box.dataset.ans);
             const user = selections[i];
             const opts = box.querySelectorAll('.q-opt');
-
             if (user !== null) answered++;
-
             opts.forEach((opt, oi) => {
                 opt.classList.remove('ok', 'no');
                 if (oi === correct) opt.classList.add('ok');
                 else if (oi === user && user !== correct) opt.classList.add('no');
             });
-
             if (user === correct) score++;
         });
 
@@ -384,42 +352,44 @@
 
         const resBox = document.getElementById('finalResult');
         resBox.style.display = 'block';
-        resBox.innerHTML = `<h3>הציון שלך: ${score} מתוך 12</h3>` + 
-                          (score >= 10 ? "<p>מעולה! אתם שולטים בחומר הלאומיות!</p>" : "<p>עבודה טובה, מומלץ לחזור על השאלות שבהן טעיתם.</p>");
-        
+        resBox.innerHTML = `<h3>הציון שלך: ${score} מתוך 12</h3>` + (score >= 10 ? "<p>מעולה!</p>" : "<p>כדאי לחזור על החומר.</p>");
         resBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    // Fixed Report Copying Mechanism
+    // FIXED COPY REPORT FUNCTION
     function copyReport() {
+        // Pull data directly from inputs to ensure accuracy
+        const ans1 = document.getElementById('ans_strongest_component').value || "לא הוזנה תשובה";
+        const ans2 = document.getElementById('ans_american_type').value || "לא הוזנה תשובה";
+        const ans3 = document.getElementById('ans_napoleon_paradox').value || "לא הוזנה תשובה";
+
         let report = "📝 דו\"ח סיכום שיעור 4 - לאומיות\n";
         report += "==============================\n\n";
-        report += "1. המרכיב הכי חזק בישראל: " + (userSessionData['strongest_component'] || "טרם הוזן") + "\n\n";
-        report += "2. ניתוח המהפכה האמריקאית: " + (userSessionData['american_type'] || "טרם הוזן") + "\n\n";
-        report += "3. הסבר על פרדוקס נפוליאון: " + (userSessionData['napoleon_paradox'] || "טרם הוזן") + "\n\n";
+        report += "1. המרכיב הכי חזק בישראל (בחירת החניך):\n" + ans1 + "\n\n";
+        report += "2. ניתוח המהפכה האמריקאית:\n" + ans2 + "\n\n";
+        report += "3. הסבר על פרדוקס נפוליאון:\n" + ans3 + "\n\n";
         
         let score = 0;
         quizItems.forEach((item, i) => {
             if (selections[i] === item.ans) score++;
         });
         report += `📊 ציון בחידון: ${score}/12\n`;
-        report += "\nכל הכבוד על ההתקדמות!";
+        report += "\n------------------------------\n";
+        report += "הדו\"ח נוצר אוטומטית בסיום השיעור.";
 
-        // Secure copy method for iframes
+        // Clipboard Copy Logic
         const textArea = document.createElement("textarea");
         textArea.value = report;
         textArea.style.position = "fixed";
         textArea.style.left = "-9999px";
-        textArea.style.top = "0";
         document.body.appendChild(textArea);
-        textArea.focus();
         textArea.select();
         
         try {
             document.execCommand('copy');
-            showToast("✅ הדו\"ח הועתק! ניתן להדביק בוואטסאפ או במייל ולשלוח למורה.", "#4caf50");
+            showToast("✅ הדו\"ח הועתק! ניתן להדביק בוואטסאפ ולשלח למורה.", "#4caf50");
         } catch (err) {
-            showToast("שגיאה בהעתקה. נסו להעתיק ידנית.", "#c62828");
+            showToast("שגיאה בהעתקה. נסה להעתיק ידנית.", "#c62828");
         }
         document.body.removeChild(textArea);
     }
@@ -434,4 +404,4 @@
 </script>
 
 </body>
-</html
+</html>
