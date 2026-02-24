@@ -3,69 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>שיעור חזרה: לאומיות עם Gemini</title>
+    <title>סיכום לאומיות</title>
     <style>
-        /* שפה עיצובית אחידה */
+        /* שפה עיצובית אחידה ומודרנית */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 10px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 10px; color: #333; }
         .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; padding-bottom: 40px; }
-        header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 30px 20px; text-align: center; }
-        header h1 { font-size: 2.2em; margin-bottom: 10px; }
-        header p { font-size: 1.1em; margin-bottom: 15px; }
-        .copy-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
-        .copy-btn:hover { background: white; color: #667eea; }
+        
+        header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 40px 20px; text-align: center; }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        header p { font-size: 1.1em; opacity: 0.9; }
 
-        .section { padding: 30px; border-bottom: 1px solid #eee; position: relative; }
+        .copy-btn { 
+            background: rgba(255,255,255,0.2); 
+            color: white; 
+            border: 2px solid white; 
+            padding: 12px 25px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: all 0.3s;
+            margin-top: 15px;
+            font-family: inherit;
+        }
+        .copy-btn:hover { background: white; color: #667eea; transform: translateY(-2px); }
+
+        .section { padding: 30px; border-bottom: 1px solid #eee; }
         .section h3 { color: #667eea; font-size: 1.8em; margin-bottom: 20px; border-right: 6px solid #667eea; padding-right: 15px; }
         
         .box-blue { background: linear-gradient(135deg, #e1f5fe, #b3e5fc); border-right: 4px solid #01579b; padding: 20px; margin: 15px 0; border-radius: 12px; }
         .box-purple { background: linear-gradient(135deg, #f3e5f5, #e1bee7); border-right: 4px solid #6a1b9a; padding: 20px; margin: 15px 0; border-radius: 12px; }
         .box-yellow { background: linear-gradient(135deg, #fff9c4, #fff59d); border-right: 4px solid #fbc02d; padding: 20px; margin: 15px 0; border-radius: 12px; }
         .box-red { background: linear-gradient(135deg, #ffebee, #ffcdd2); border-right: 4px solid #c62828; padding: 20px; margin: 15px 0; border-radius: 12px; }
-        .box-green { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-right: 4px solid #2e7d32; padding: 25px; margin: 20px 0; border-radius: 12px; }
-
-        .text-input { width: 100%; padding: 15px; border: 2px solid #667eea; border-radius: 10px; font-size: 1em; margin: 12px 0; font-family: inherit; resize: vertical; min-height: 100px; }
-        .save-btn { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; font-family: inherit; }
-        .gemini-btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; margin-top: 10px; margin-right: 10px; font-family: inherit; }
-        .save-btn:hover, .gemini-btn:hover { transform: scale(1.03); opacity: 0.9; }
         
+        .text-input { width: 100%; padding: 15px; border: 2px solid #667eea; border-radius: 10px; font-size: 1em; margin: 12px 0; font-family: inherit; resize: vertical; min-height: 100px; outline: none; transition: border-color 0.3s; }
+        .text-input:focus { border-color: #764ba2; }
+        
+        .save-btn { background: #4caf50; color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; font-family: inherit; }
+        .save-btn:hover { background: #45a049; transform: scale(1.03); }
         .saved-ok { color: #4caf50; font-size: 0.9em; margin-top: 5px; display: none; font-weight: bold; }
 
-        .ai-feedback { background: #f0f4ff; border: 1px dashed #667eea; border-radius: 10px; padding: 15px; margin-top: 15px; display: none; font-size: 0.95em; color: #333; line-height: 1.5; }
-        .loading-spinner { display: none; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: inline-block; vertical-align: middle; margin-right: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .choice { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-        .choice:hover { border-color: #667eea; background: #f0f2f5; }
-        .choice.sel { background: #667eea; color: white; }
-        .choice.correct { background: #4caf50 !important; color: white; }
-        .choice.wrong { background: #e53935 !important; color: white; }
-        .feedback { padding: 12px; border-radius: 10px; margin-top: 10px; display: none; font-weight: bold; }
-
+        /* Quiz Styling */
         .quiz-wrap { background: #f1f3f5; padding: 25px; border-radius: 20px; margin: 30px 0; }
-        .q-box { background: white; padding: 20px; margin: 15px 0; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .q-reminder { font-size: 0.9em; color: #666; font-style: italic; margin-bottom: 8px; display: block; border-right: 3px solid #667eea; padding-right: 10px; }
+        .q-box { background: white; padding: 20px; margin: 15px 0 30px 0; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .q-box h4 { margin-bottom: 15px; color: #333; line-height: 1.4; font-size: 1.1em; }
         .q-opt { background: #f8f9fa; padding: 12px 18px; margin: 8px 0; border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
-        .q-opt.sel { background: #667eea; color: white; }
-        .q-opt.ok { background: #28a745; color: white; }
-        .q-opt.no { background: #dc3545; color: white; }
+        .q-opt:hover { border-color: #667eea; background: #fff; }
+        .q-opt.sel { background: #667eea; color: white; border-color: #667eea; }
+        .q-opt.ok { background: #28a745; color: white; border-color: #28a745; }
+        .q-opt.no { background: #dc3545; color: white; border-color: #dc3545; }
         
-        .check-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 18px 40px; border-radius: 35px; cursor: pointer; font-size: 1.2em; font-weight: bold; margin-top: 25px; width: 100%; box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3); }
+        .check-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 18px 40px; border-radius: 35px; cursor: pointer; font-size: 1.2em; font-weight: bold; margin-top: 25px; width: 100%; box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3); font-family: inherit; }
         .result-box { background: white; padding: 25px; margin-top: 25px; border-radius: 15px; text-align: center; font-size: 1.3em; display: none; border: 3px solid #667eea; }
 
-        .compare-table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        .compare-table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 10px; overflow: hidden; }
         .compare-table th, .compare-table td { border: 1px solid #ddd; padding: 15px; text-align: center; }
-        .compare-table th { background-color: #f2f2f2; color: #667eea; }
+        .compare-table th { background-color: #f2f2f2; color: #667eea; font-weight: bold; }
 
         /* Assistant Box */
-        .assistant-box { fixed; bottom: 20px; left: 20px; width: 300px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; overflow: hidden; display: flex; flex-direction: column; }
-        .assistant-header { background: #667eea; color: white; padding: 10px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        .assistant-content { padding: 15px; max-height: 250px; overflow-y: auto; font-size: 0.9em; }
-        .assistant-input-area { display: flex; padding: 10px; border-top: 1px solid #eee; }
-        .assistant-input { flex-grow: 1; border: 1px solid #ddd; border-radius: 10px; padding: 5px 10px; outline: none; }
-        .assistant-send { background: #667eea; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; margin-right: 5px; cursor: pointer; }
+        .assistant-box { position: fixed; bottom: 20px; left: 20px; width: 320px; background: white; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 1000; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #ddd; }
+        .assistant-header { background: #667eea; color: white; padding: 12px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .assistant-content { padding: 15px; max-height: 250px; overflow-y: auto; font-size: 0.9em; background: #fafafa; }
+        .assistant-input-area { display: flex; padding: 10px; border-top: 1px solid #eee; background: white; }
+        .assistant-input { flex-grow: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; outline: none; font-family: inherit; }
+        .assistant-send { background: #667eea; color: white; border: none; border-radius: 50%; width: 35px; height: 35px; margin-right: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .assistant-send:hover { background: #764ba2; transform: scale(1.1); }
+
+        /* Toast Message */
+        #toast { position: fixed; bottom: 30px; right: 30px; background: #333; color: white; padding: 15px 25px; border-radius: 10px; display: none; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
 
         @media (max-width: 600px) {
-            header h1 { font-size: 1.6em; }
+            header h1 { font-size: 1.8em; }
+            .section { padding: 20px; }
             .assistant-box { width: 90%; left: 5%; bottom: 10px; }
         }
     </style>
@@ -74,113 +85,128 @@
 
 <div class="container">
     <header>
-        <h1>🎓 שיעור 4: מסכמים עם Gemini</h1>
-        <p>חזרה חכמה על הלאומיות בסיוע בינה מלאכותית</p>
-        <button class="copy-btn" onclick="copyAll()">📋 העתק דו"ח תשובות למורה</button>
+        <h1>סיכום לאומיות</h1>
+        <p>שיעור חזרה מסכם על כל מה שלמדנו עד עכשיו</p>
+        <button class="copy-btn" onclick="copyReport()">📋 העתק דו"ח תשובות למורה</button>
     </header>
 
-    <!-- Part 1: Definition & Components -->
+    <!-- Part 1: Foundations -->
     <div class="section">
         <h3>1. מהי לאומיות?</h3>
         <div class="box-blue">
-            <p><strong>תזכורת:</strong> לאומיות משלבת זהות משותפת עם שאיפה למדינה עצמאית.</p>
+            <p><strong>תזכורת מהירה:</strong> לאומיות היא שילוב של תחושת שייכות (רגש) ושאיפה למדינה עצמאית (פוליטיקה).</p>
         </div>
         <div class="box-yellow">
             <h4>✍️ שאלת הבנה:</h4>
-            <p>למדנו על מרכיבי הלאומיות. איזה מרכיב לדעתכם הוא הכי "חזק" בישראל היום? הסבירו למה.</p>
-            <textarea class="text-input" id="ans_strongest_component" placeholder="לדעתי המרכיב הכי חזק הוא... כי..."></textarea>
-            <button class="save-btn" onclick="save('strongest_component')">💾 שמירה</button>
-            <button class="gemini-btn" onclick="getFeedback('strongest_component', 'איזה מרכיב לאומי הכי חזק בישראל?')">✨ נתח את התשובה שלי</button>
-            <div class="saved-ok" id="ok_strongest_component">✓ נשמר!</div>
-            <div id="ai_feedback_strongest_component" class="ai-feedback"></div>
+            <p>מתוך מרכיבי הלאומיות (שפה, תרבות, היסטוריה, סמלים), איזה מרכיב לדעתכם הוא הכי משמעותי לחיבור בין ישראלים? נמקו בקצרה.</p>
+            <textarea class="text-input" id="ans_strongest_component" placeholder="כתבו כאן את דעתכם..."></textarea>
+            <button class="save-btn" onclick="saveData('strongest_component')">💾 שמרו תשובה</button>
+            <div class="saved-ok" id="ok_strongest_component">✓ נשמר במערכת</div>
         </div>
     </div>
 
-    <!-- Part 2: Ethnic vs Civic -->
+    <!-- Part 2: Typology -->
     <div class="section">
         <h3>2. אתנית מול אזרחית</h3>
+        <p>כדי להבין איך עם מתגבש, אנחנו מחלקים את הלאומיות לשני סוגים מרכזיים:</p>
         <table class="compare-table">
-            <tr><th>תכונה</th><th>לאומיות אתנית</th><th>לאומיות אזרחית</th></tr>
-            <tr><td>מרכיב עיקרי</td><td>מוצא ודם</td><td>ערכים וחוקה</td></tr>
+            <thead>
+                <tr>
+                    <th>תכונה</th>
+                    <th>לאומיות אתנית</th>
+                    <th>לאומיות אזרחית</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>בסיס השייכות</strong></td>
+                    <td>מוצא, דם, שורשים היסטוריים</td>
+                    <td>ערכים, חוקים, אזרחות</td>
+                </tr>
+                <tr>
+                    <td><strong>איך מצטרפים?</strong></td>
+                    <td>כמעט בלתי אפשרי (צריך להיוולד לזה)</td>
+                    <td>אפשרי (בחירה וקבלת האזרחות)</td>
+                </tr>
+            </tbody>
         </table>
 
         <div class="box-purple">
-            <h4>🧠 תרגיל ניתוח - המהפכה האמריקאית:</h4>
-            <p>האם המהפכה האמריקאית (1776) מייצגת לאומיות אתנית או אזרחית? נמקו.</p>
-            <textarea class="text-input" id="ans_american_type" placeholder="הלאומיות האמריקאית היא... כי..."></textarea>
-            <button class="save-btn" onclick="save('american_type')">💾 שמירה</button>
-            <button class="gemini-btn" onclick="getFeedback('american_type', 'האם המהפכה האמריקאית היא אתנית או אזרחית?')">✨ משוב מהבינה המלאכותית</button>
-            <div class="saved-ok" id="ok_american_type">✓ נשמר!</div>
-            <div id="ai_feedback_american_type" class="ai-feedback"></div>
+            <h4>🧠 ניתוח המהפכה האמריקאית:</h4>
+            <p>המהפכה האמריקאית הקימה מדינה על בסיס רעיונות של חופש ושוויון לכל אזרח. האם לדעתכם מדובר בלאומיות אתנית או אזרחית? הסבירו למה.</p>
+            <textarea class="text-input" id="ans_american_type" placeholder="תשובתכם כאן..."></textarea>
+            <button class="save-btn" onclick="saveData('american_type')">💾 שמרו תשובה</button>
+            <div class="saved-ok" id="ok_american_type">✓ נשמר במערכת</div>
         </div>
     </div>
 
-    <!-- Part 3: Napoleon -->
+    <!-- Part 3: Napoleon Paradox -->
     <div class="section">
-        <h3>3. המפיץ והכובש: נפוליאון</h3>
+        <h3>3. השפעת נפוליאון</h3>
         <div class="box-red">
-            <p>נפוליאון הפיץ ערכי שוויון אבל גם כבש עמים, מה שעורר אותם למרוד בו.</p>
+            <p>נפוליאון כבש את אירופה ובכך יצר מצב מיוחד: הוא הפיץ רעיונות חיוביים של שוויון, אך השלטון הצבאי שלו גרם לעמים אחרים לרצות להשתחרר ממנו ולהגדיר את עצמם כעמים עצמאיים.</p>
         </div>
         <div class="box-yellow">
-            <h4>🤔 שאלת חשיבה - "הפרדוקס":</h4>
-            <p>איך זה יכול להיות שכיבוש של מדינה אחרת דווקא גורם לעם שלה להרגיש **יותר** לאומי?</p>
-            <textarea class="text-input" id="ans_napoleon_paradox" placeholder="כשכובשים עם מסוים, קורה ש..."></textarea>
-            <button class="save-btn" onclick="save('napoleon_paradox')">💾 שמירה</button>
-            <button class="gemini-btn" onclick="getFeedback('napoleon_paradox', 'איך כיבוש מעורר לאומיות? (פרדוקס נפוליאון)')">✨ בדוק את ההסבר שלי</button>
-            <div class="saved-ok" id="ok_napoleon_paradox">✓ נשמר!</div>
-            <div id="ai_feedback_napoleon_paradox" class="ai-feedback"></div>
+            <h4>🤔 שאלת חשיבה:</h4>
+            <p>הסבירו במילים שלכם: איך כיבוש של עם אחר יכול לגרום לו להפוך ליותר "לאומי"?</p>
+            <textarea class="text-input" id="ans_napoleon_paradox" placeholder="תשובתכם כאן..."></textarea>
+            <button class="save-btn" onclick="saveData('napoleon_paradox')">💾 שמרו תשובה</button>
+            <div class="saved-ok" id="ok_napoleon_paradox">✓ נשמר במערכת</div>
         </div>
     </div>
 
-    <!-- Quiz -->
+    <!-- Mastery Quiz with Explanations -->
     <div class="section">
-        <h3>🎯 חידון סיכום (12 שאלות)</h3>
+        <h3>🎯 חידון סיכום: בדקו את הידע</h3>
         <div class="quiz-wrap" id="quizContainer">
-            <!-- Quiz questions remain same as previous version but logic is integrated -->
+            <!-- Questions rendered via JS -->
         </div>
-        <button class="check-btn" onclick="checkFinal()">בדקו את הציון שלי! ✓</button>
+        <button class="check-btn" onclick="evaluateQuiz()">סיום ובדיקת ציון ✓</button>
         <div class="result-box" id="finalResult"></div>
     </div>
 </div>
 
-<!-- AI Assistant Floating UI -->
+<!-- Floating AI Assistant -->
 <div class="assistant-box">
     <div class="assistant-header">
         <span>✨ עוזר Gemini אישי</span>
-        <span style="cursor:pointer" onclick="clearAssistant()">🗑️</span>
+        <span style="cursor:pointer; font-size: 1.2em;" onclick="resetChat()">🔄</span>
     </div>
-    <div class="assistant-content" id="assistantContent">
-        שלום! אני כאן כדי לעזור לך להבין מושגים בלאומיות. שאל אותי כל דבר! (למשל: "מה זה ריבונות?")
+    <div class="assistant-content" id="chatContent">
+        שלום! אני כאן לעזור לכם בסיכום הלאומיות. יש מושג שלא ברור? שאלו אותי (למשל: "מה ההבדל בין עם ללאום?")
     </div>
     <div class="assistant-input-area">
-        <input type="text" id="assistantInput" class="assistant-input" placeholder="שאל אותי משהו...">
-        <button class="assistant-send" onclick="askAssistant()">➔</button>
+        <input type="text" id="chatInput" class="assistant-input" placeholder="שאלו שאלה...">
+        <button class="assistant-send" onclick="sendToAI()">➔</button>
     </div>
 </div>
 
-<script>
-    const apiKey = ""; // Runtime provides this
-    let answers = {};
-    let quizSelected = Array(12).fill(null);
+<!-- Custom Toast -->
+<div id="toast"></div>
 
-    // Initial load
+<script>
+    const apiKey = ""; // API Key handled by environment
+    let userSessionData = {};
+    let selections = Array(12).fill(null);
+
+    // Initial setup
     window.onload = () => {
-        const saved = localStorage.getItem('nationalism_review_final');
+        const saved = localStorage.getItem('nationalism_session_data');
         if (saved) {
-            answers = JSON.parse(saved);
-            for (let k in answers) {
-                const el = document.getElementById('ans_' + k);
-                if (el) el.value = answers[k];
-            }
+            userSessionData = JSON.parse(saved);
+            ['strongest_component', 'american_type', 'napoleon_paradox'].forEach(id => {
+                if (userSessionData[id]) document.getElementById('ans_' + id).value = userSessionData[id];
+            });
         }
-        renderQuiz();
+        buildQuiz();
     };
 
-    async function callGemini(prompt, systemInstruction = "אתה מורה להיסטוריה עוזר ותומך. ענה בעברית בצורה קצרה ומעודדת.") {
+    // Generic Gemini API caller with backoff
+    async function callGemini(message, systemPrompt = "אתה מורה להיסטוריה מעודד. ענה בעברית פשוטה וקצרה מאוד (עד 2-3 שורות).") {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
         const payload = {
-            contents: [{ parts: [{ text: prompt }] }],
-            systemInstruction: { parts: [{ text: systemInstruction }] }
+            contents: [{ parts: [{ text: message }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
         };
 
         let delay = 1000;
@@ -193,124 +219,219 @@
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "לא התקבלה תשובה.";
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "לא הצלחתי למצוא תשובה.";
                 }
-            } catch (err) {}
-            await new Promise(res => setTimeout(res, delay));
+            } catch (e) {}
+            await new Promise(r => setTimeout(r, delay));
             delay *= 2;
         }
-        return "מצטער, יש לי תקלה בחיבור. נסה שוב מאוחר יותר.";
+        return "תקלה בחיבור לשרת ה-AI. נסו שוב מאוחר יותר.";
     }
 
-    async function getFeedback(id, question) {
-        const userInput = document.getElementById('ans_' + id).value;
-        const feedbackDiv = document.getElementById('ai_feedback_' + id);
-        
-        if (!userInput.trim()) {
-            feedbackDiv.style.display = 'block';
-            feedbackDiv.innerHTML = "אנא כתבו תשובה קודם כדי שאוכל לתת משוב.";
-            return;
-        }
-
-        feedbackDiv.style.display = 'block';
-        feedbackDiv.innerHTML = '<div class="loading-spinner"></div> מעבד משוב חכם...';
-
-        const prompt = `השאלה היא: "${question}". התלמיד ענה: "${userInput}". תן משוב בונה, ציין מה נכון ומה אפשר לשפר, ושמור על טון חיובי. מקסימום 3 שורות.`;
-        const feedback = await callGemini(prompt, "אתה עוזר הוראה מקצועי להיסטוריה. תן משוב קצר ומדויק לתלמיד על תשובתו בנושא לאומיות.");
-        
-        feedbackDiv.innerHTML = `<strong>✨ משוב Gemini:</strong><br>${feedback}`;
-    }
-
-    async function askAssistant() {
-        const input = document.getElementById('assistantInput');
-        const content = document.getElementById('assistantContent');
-        const query = input.value.trim();
+    // Assistant logic
+    async function sendToAI() {
+        const inputEl = document.getElementById('chatInput');
+        const contentEl = document.getElementById('chatContent');
+        const query = inputEl.value.trim();
         if (!query) return;
 
-        content.innerHTML += `<div style="margin-top:10px; color:#667eea;"><strong>אתה:</strong> ${query}</div>`;
-        input.value = "";
-        content.scrollTop = content.scrollHeight;
+        contentEl.innerHTML += `<div style="margin-top:10px; color:#667eea; font-weight:bold;">אתה: ${query}</div>`;
+        inputEl.value = "";
+        contentEl.scrollTop = contentEl.scrollHeight;
 
-        const response = await callGemini(query, "אתה עוזר לימודי מומחה להיסטוריה. הסבר מושגים בלאומיות בצורה פשוטה וברורה לתלמידי תיכון.");
-        content.innerHTML += `<div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;"><strong>Gemini:</strong> ${response}</div>`;
-        content.scrollTop = content.scrollHeight;
+        const response = await callGemini(query);
+        contentEl.innerHTML += `<div style="margin-top:8px; border-top:1px solid #eee; padding-top:5px;"><strong>Gemini:</strong> ${response}</div>`;
+        contentEl.scrollTop = contentEl.scrollHeight;
     }
 
-    function clearAssistant() {
-        document.getElementById('assistantContent').innerHTML = "שלום! אני כאן כדי לעזור. שאל אותי כל דבר!";
+    function resetChat() {
+        document.getElementById('chatContent').innerHTML = "שלום! אני כאן לעזור. שאלו אותי כל דבר על לאומיות!";
     }
 
-    // Existing quiz and save logic...
-    function save(id) {
-        const val = document.getElementById('ans_' + id).value;
-        answers[id] = val;
+    // Data Management
+    function saveData(id) {
+        const text = document.getElementById('ans_' + id).value;
+        userSessionData[id] = text;
+        localStorage.setItem('nationalism_session_data', JSON.stringify(userSessionData));
+        
         const ok = document.getElementById('ok_' + id);
         ok.style.display = 'block';
         setTimeout(() => ok.style.display = 'none', 2000);
-        localStorage.setItem('nationalism_review_final', JSON.stringify(answers));
     }
 
-    function renderQuiz() {
-        const quizData = [
-            { q: "מהו ההבדל המרכזי בין 'עם' ל'לאום'?", opts: ["א. עם הוא רק קבוצה דתית.", "ב. לאום הוא עם שיש לו שאיפה פוליטית למדינה.", "ג. אין שום הבדל ביניהם."], ans: 1 },
-            { q: "איזה מרכיב נחשב ל'גשר' שמקשר בין בני האדם בלאומיות?", opts: ["א. שפה משותפת", "ב. מספר חשבון בנק", "ג. סוג רכב דומה"], ans: 0 },
-            { q: "לאומיות אתנית מבוססת בעיקר על:", opts: ["א. הצבעה בבחירות", "ב. הסכמה על חוקים", "ג. מוצא, דם והיסטוריה"], ans: 2 },
-            { q: "מהי לאומיות אזרחית?", opts: ["א. רק מי שנולד בארץ שייך.", "ב. מבוססת על ערכים, חוקים ואזרחות.", "ג. קיימת רק בקיבוצים."], ans: 1 },
-            { q: "המהפכה האמריקאית נחשבת ללאומיות:", opts: ["א. אזרחית", "ב. אתנית", "ג. דתית"], ans: 0 },
-            { q: "מה הייתה הסיסמה המרכזית במהפכה האמריקאית?", opts: ["א. חירות, שוויון, אחווה", "ב. אין מיסוי ללא ייצוג", "ג. העם רוצה צדק"], ans: 1 },
-            { q: "כיצד נפוליאון הפיץ את הלאומיות?", opts: ["א. חילק ספרים.", "ב. המציא אינטרנט.", "ג. כבש שטחים והפיץ ערכי שוויון וחוק."], ans: 2 },
-            { q: "מה הכוונה ב'פרדוקס נפוליאון'?", opts: ["א. הביא חופש אבל שלט בכוח, לכן מרדו בו.", "ב. נמוך אבל נלחם גבוה.", "ג. שנא צרפת אבל הנהיג אותה."], ans: 0 },
-            { q: "איזה מהבאים הוא מרכיב 'שיוכי'?", opts: ["א. דעה פוליטית", "ב. מוצא אתני (דם)", "ג. מקום עבודה"], ans: 1 },
-            { q: "מדוע הלאומיות צמחה במאה ה-18 וה-19?", opts: ["א. מהפכות ושינויים חברתיים.", "ב. לא הייתה טלוויזיה.", "ג. המצאת הגלגל."], ans: 0 },
-            { q: "ישראל נחשבת למדינת לאום:", opts: ["א. אזרחית בלבד", "ב. ללא סוג מוגדר", "ג. אתנית-תרבותית"], ans: 2 },
-            { q: "מהי 'ריבונות העם'?", opts: ["א. המלך מחליט.", "ב. הסמכות והכוח לשלוט בידי האזרחים.", "ג. רק הצבא שולט."], ans: 1 }
-        ];
+    // Quiz construction
+    const quizItems = [
+        { 
+            reminder: "זכרו: לאום הוא קבוצה שרוצה מדינה, בעוד עם יכול להיות רק קבוצה תרבותית.",
+            q: "מהו ההבדל המרכזי בין 'עם' ל'לאום'?", 
+            opts: ["א. עם הוא רק קבוצה דתית.", "ב. לאום הוא עם שיש לו שאיפה פוליטית למדינה.", "ג. אין שום הבדל ביניהם."], 
+            ans: 1 
+        },
+        { 
+            reminder: "חשבו על משהו שמאפשר לאנשים לדבר ולהבין זה את זה.",
+            q: "איזה מרכיב נחשב ל'גשר' שמקשר בין בני האדם בלאומיות?", 
+            opts: ["א. שפה משותפת", "ב. מספר זהות דומה", "ג. סוג לבוש זהה"], 
+            ans: 0 
+        },
+        { 
+            reminder: "לאומיות זו מבוססת על דברים שלא בוחרים, כמו משפחה ועבר.",
+            q: "לאומיות אתנית מבוססת בעיקר על:", 
+            opts: ["א. הצבעה בבחירות", "ב. הסכמה על חוקים", "ג. מוצא, דם והיסטוריה"], 
+            ans: 2 
+        },
+        { 
+            reminder: "בסוג הזה, האזרחות והחוק הם מה שקובע מי שייך.",
+            q: "מהי לאומיות אזרחית?", 
+            opts: ["א. רק מי שנולד בארץ שייך.", "ב. מבוססת על ערכים, חוקים ואזרחות.", "ג. קיימת רק בערים גדולות."], 
+            ans: 1 
+        },
+        { 
+            reminder: "אמריקה הוקמה על ידי מהגרים שהתאחדו סביב רעיונות החירות.",
+            q: "המהפכה האמריקאית נחשבת ללאומיות:", 
+            opts: ["א. אזרחית", "ב. אתנית", "ג. דתית"], 
+            ans: 0 
+        },
+        { 
+            reminder: "המתיישבים כעסו שהם משלמים מיסים לבריטניה בלי לקבל זכות השפעה.",
+            q: "מה הייתה הסיסמה המרכזית במהפכה האמריקאית?", 
+            opts: ["א. חירות או מוות", "ב. אין מיסוי ללא ייצוג", "ג. העם רוצה שינוי"], 
+            ans: 1 
+        },
+        { 
+            reminder: "נפוליאון כבש את רוב אירופה והביא איתו חוקים חדשים.",
+            q: "כיצד נפוליאון הפיץ את הלאומיות?", 
+            opts: ["א. הוא חילק דגלים.", "ב. הוא בנה מפעלים.", "ג. הוא כבש שטחים והפיץ את ערכי השוויון והחוק."], 
+            ans: 2 
+        },
+        { 
+            reminder: "נפוליאון הביא חופש לאחרים אבל גם שלט עליהם בכוח.",
+            q: "מה הכוונה ב'פרדוקס נפוליאון'?", 
+            opts: ["א. הוא הביא חופש אבל שלט בכוח, לכן מרדו בו בשם הלאומיות.", "ב. הוא היה גנרל אבל שנא צבא.", "ג. הוא היה צרפתי שחי ברוסיה."], 
+            ans: 0 
+        },
+        { 
+            reminder: "אלו דברים שאדם נולד לתוכם ואינו יכול לשנות.",
+            q: "איזה מהבאים הוא מרכיב 'שיוכי'?", 
+            opts: ["א. דעה פוליטית", "ב. מוצא אתני (דם)", "ג. תחביב אישי"], 
+            ans: 1 
+        },
+        { 
+            reminder: "שינויים אלו אפשרו לאנשים להרגיש חלק מקבוצה גדולה יותר.",
+            q: "מדוע הלאומיות צמחה במאה ה-18 וה-19?", 
+            opts: ["א. בגלל המהפכות הגדולות ושינויים חברתיים.", "ב. כי גילו את החשמל.", "ג. כי כולם עברו לגור בכפר."], 
+            ans: 0 
+        },
+        { 
+            reminder: "ישראל היא מדינה שמשלבת מוצא יהודי עם חוקים דמוקרטיים.",
+            q: "ישראל נחשבת למדינת לאום:", 
+            opts: ["א. אזרחית בלבד", "ב. ללא סוג מוגדר", "ג. אתנית-תרבותית (עם מאפיינים אזרחיים)"], 
+            ans: 2 
+        },
+        { 
+            reminder: "זהו הרעיון המרכזי בדמוקרטיה - למי שייך הכוח האמיתי?",
+            q: "מהי 'ריבונות העם'?", 
+            opts: ["א. שהמלך מחליט הכל.", "ב. שהסמכות והכוח לשלוט נמצאים בידי האזרחים.", "ג. שרק הצבא שולט."], 
+            ans: 1 
+        }
+    ];
 
+    function buildQuiz() {
         let html = '';
-        quizData.forEach((data, i) => {
-            html += `<div class="q-box" data-ans="${data.ans}">
-                <h4>${i + 1}. ${data.q}</h4>
-                ${data.opts.map((opt, oi) => `<div class="q-opt" onclick="pick(this, ${i}, ${oi})">${opt}</div>`).join('')}
-            </div>`;
+        quizItems.forEach((item, i) => {
+            html += `
+                <span class="q-reminder">💡 תזכורת: ${item.reminder}</span>
+                <div class="q-box" data-ans="${item.ans}">
+                    <h4>${i + 1}. ${item.q}</h4>
+                    ${item.opts.map((opt, oi) => `<div class="q-opt" onclick="setSelection(this, ${i}, ${oi})">${opt}</div>`).join('')}
+                </div>
+            `;
         });
         document.getElementById('quizContainer').innerHTML = html;
     }
 
-    function pick(el, qIdx, optIdx) {
-        const qBox = el.parentElement;
-        qBox.querySelectorAll('.q-opt').forEach(opt => opt.classList.remove('sel'));
+    function setSelection(el, qIdx, optIdx) {
+        const parent = el.parentElement;
+        parent.querySelectorAll('.q-opt').forEach(o => o.classList.remove('sel'));
         el.classList.add('sel');
-        quizSelected[qIdx] = optIdx;
+        selections[qIdx] = optIdx;
     }
 
-    function checkFinal() {
-        const qBoxes = document.querySelectorAll('.q-box');
+    function evaluateQuiz() {
+        const boxes = document.querySelectorAll('.q-box');
         let score = 0;
-        qBoxes.forEach((box, i) => {
+        let answered = 0;
+
+        boxes.forEach((box, i) => {
             const correct = parseInt(box.dataset.ans);
-            const user = quizSelected[i];
+            const user = selections[i];
             const opts = box.querySelectorAll('.q-opt');
+
+            if (user !== null) answered++;
+
             opts.forEach((opt, oi) => {
                 opt.classList.remove('ok', 'no');
                 if (oi === correct) opt.classList.add('ok');
-                else if (oi === user) opt.classList.add('no');
+                else if (oi === user && user !== correct) opt.classList.add('no');
             });
+
             if (user === correct) score++;
         });
+
+        if (answered < 12) {
+            showToast("נא לענות על כל השאלות לפני הבדיקה!", "#c62828");
+            return;
+        }
+
         const resBox = document.getElementById('finalResult');
         resBox.style.display = 'block';
-        resBox.innerHTML = `<h3>הציון שלך: ${score} מתוך 12</h3>`;
+        resBox.innerHTML = `<h3>הציון שלך: ${score} מתוך 12</h3>` + 
+                          (score >= 10 ? "<p>מעולה! אתם שולטים בחומר הלאומיות!</p>" : "<p>עבודה טובה, מומלץ לחזור על השאלות שבהן טעיתם.</p>");
+        
         resBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    function copyAll() {
-        let report = "📝 דו\"ח שיעור 4 - לאומיות עם Gemini\n\n";
-        report += "1. המרכיב הכי חזק: " + (answers['strongest_component'] || "") + "\n";
-        report += "2. המהפכה האמריקאית: " + (answers['american_type'] || "") + "\n";
-        report += "3. פרדוקס נפוליאון: " + (answers['napoleon_paradox'] || "") + "\n";
-        alert('הדו"ח הועתק! (בפיתוח)');
+    // Fixed Report Copying Mechanism
+    function copyReport() {
+        let report = "📝 דו\"ח סיכום שיעור 4 - לאומיות\n";
+        report += "==============================\n\n";
+        report += "1. המרכיב הכי חזק בישראל: " + (userSessionData['strongest_component'] || "טרם הוזן") + "\n\n";
+        report += "2. ניתוח המהפכה האמריקאית: " + (userSessionData['american_type'] || "טרם הוזן") + "\n\n";
+        report += "3. הסבר על פרדוקס נפוליאון: " + (userSessionData['napoleon_paradox'] || "טרם הוזן") + "\n\n";
+        
+        let score = 0;
+        quizItems.forEach((item, i) => {
+            if (selections[i] === item.ans) score++;
+        });
+        report += `📊 ציון בחידון: ${score}/12\n`;
+        report += "\nכל הכבוד על ההתקדמות!";
+
+        // Secure copy method for iframes
+        const textArea = document.createElement("textarea");
+        textArea.value = report;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            document.execCommand('copy');
+            showToast("✅ הדו\"ח הועתק! ניתן להדביק בוואטסאפ או במייל ולשלוח למורה.", "#4caf50");
+        } catch (err) {
+            showToast("שגיאה בהעתקה. נסו להעתיק ידנית.", "#c62828");
+        }
+        document.body.removeChild(textArea);
+    }
+
+    function showToast(msg, color) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.backgroundColor = color;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 4000);
     }
 </script>
 
 </body>
-</html>
+</html
